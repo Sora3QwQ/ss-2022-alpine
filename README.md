@@ -33,7 +33,7 @@ chmod +x ss-2022-alpine.sh
 ./ss-2022-alpine.sh
 ```
 
-不带参数时会进入精简的交互式创建流程。脚本会：
+不带参数时会打开交互式管理菜单，可创建、查看、启停、重启、删除和更新节点。选择“创建节点”后，脚本会：
 
 1. 使用 `apk` 安装缺失依赖；
 2. 从 Shadowsocks Rust 官方 GitHub Release 选择当前架构的 musl 包；

@@ -48,4 +48,8 @@ uri=$(make_share_uri hk 1.2.3.4 443 2022-blake3-aes-128-gcm 'AAAAAAAAAAAAAAAAAAA
 ipv6_uri=$(make_share_uri hk 2001:db8::1 443 2022-blake3-aes-128-gcm 'AAAAAAAAAAAAAAAAAAAAAA==')
 [[ "$ipv6_uri" == ss://*@\[2001:db8::1\]:443#hk ]]
 
+ensure_dependencies() { :; }
+menu_output=$(printf '0\n' | interactive_menu 2>&1)
+[[ "$menu_output" == *'Shadowsocks 2022 - Alpine'* ]]
+
 printf 'smoke tests: ok\n'

@@ -6,7 +6,7 @@
 set -eu
 umask 077
 
-SCRIPT_VERSION="1.0.0"
+SCRIPT_VERSION="1.1.0"
 PROGRAM_NAME="ss-2022-alpine"
 
 INSTALL_DIR="${SS_INSTALL_DIR:-/etc/ss-rust}"
@@ -62,7 +62,8 @@ usage() {
 Alpine Linux 原生 Shadowsocks 2022 节点管理脚本
 
 用法：
-  ss-2022-alpine.sh create [选项]       安装 ssserver 并创建节点（默认命令）
+  ss-2022-alpine.sh                     打开交互式管理菜单
+  ss-2022-alpine.sh create [选项]       安装 ssserver 并创建节点
   ss-2022-alpine.sh install [版本]      只安装/更新 ssserver
   ss-2022-alpine.sh update [版本]       更新 ssserver，并重启运行中的节点
   ss-2022-alpine.sh list                列出节点
@@ -802,9 +803,106 @@ show_versions() {
     fi
 }
 
+menu_pause() {
+    printf '\n按回车键返回主菜单……' >&2
+    IFS= read -r menu_answer || true
+}
+
+choose_existing_node() {
+    list_nodes
+    printf '\n请输入节点名称：' >&2
+    IFS= read -r selected_node || selected_node=""
+    selected_node=$(normalize_node_name "$selected_node")
+    if ! validate_node_name "$selected_node" || ! node_exists "$selected_node"; then
+        warn "节点不存在：${selected_node:-空}"
+        return 1
+    fi
+    return 0
+}
+
+interactive_menu() {
+    ensure_dependencies
+
+    while true; do
+        if [ -t 1 ] && command -v clear >/dev/null 2>&1; then
+            clear
+        fi
+        printf '%b========================================%b\n' "$C_CYAN" "$C_RESET"
+        printf '%b       Shadowsocks 2022 - Alpine%b\n' "$C_CYAN" "$C_RESET"
+        printf '%b========================================%b\n' "$C_CYAN" "$C_RESET"
+        printf '  1. 创建节点\n'
+        printf '  2. 查看节点列表\n'
+        printf '  3. 查看节点配置和分享链接\n'
+        printf '  4. 启动节点\n'
+        printf '  5. 停止节点\n'
+        printf '  6. 重启节点\n'
+        printf '  7. 删除节点\n'
+        printf '  8. 更新 Shadowsocks Rust\n'
+        printf '  9. 查看版本\n'
+        printf '  0. 退出\n'
+        printf '%b========================================%b\n' "$C_CYAN" "$C_RESET"
+        printf '请选择 [0-9]：' >&2
+        IFS= read -r menu_choice || menu_choice="0"
+
+        case "$menu_choice" in
+            1)
+                create_node
+                menu_pause
+                ;;
+            2)
+                list_nodes
+                menu_pause
+                ;;
+            3)
+                if choose_existing_node; then show_node "$selected_node"; fi
+                menu_pause
+                ;;
+            4)
+                if choose_existing_node; then control_node start "$selected_node" || warn "节点启动失败。"; fi
+                menu_pause
+                ;;
+            5)
+                if choose_existing_node; then control_node stop "$selected_node" || warn "节点停止失败。"; fi
+                menu_pause
+                ;;
+            6)
+                if choose_existing_node; then control_node restart "$selected_node" || warn "节点重启失败。"; fi
+                menu_pause
+                ;;
+            7)
+                if choose_existing_node; then delete_node "$selected_node"; fi
+                menu_pause
+                ;;
+            8)
+                update_binary_and_nodes latest
+                menu_pause
+                ;;
+            9)
+                show_versions
+                menu_pause
+                ;;
+            0)
+                info "已退出。"
+                return 0
+                ;;
+            *)
+                warn "请输入 0-9 之间的数字。"
+                menu_pause
+                ;;
+        esac
+    done
+}
+
 main() {
-    command=${1:-create}
-    if [ "$#" -gt 0 ]; then shift; fi
+    if [ "$#" -eq 0 ]; then
+        require_root
+        require_alpine
+        interactive_menu
+        return 0
+    fi
+
+    command=$1
+    shift
 
     case "$command" in
         help|-h|--help) usage; return 0 ;;
