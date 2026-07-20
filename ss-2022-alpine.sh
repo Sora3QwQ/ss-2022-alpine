@@ -19,7 +19,6 @@ LOG_DIR="${SS_LOG_DIR:-/var/log/ss-rust}"
 GITHUB_API="${SS_GITHUB_API:-https://api.github.com/repos/shadowsocks/shadowsocks-rust}"
 
 DEFAULT_METHOD="2022-blake3-aes-128-gcm"
-DEFAULT_LISTEN="0.0.0.0"
 TEMP_DIR=""
 
 if [ -t 1 ]; then
@@ -82,7 +81,7 @@ create 选项：
   --method METHOD       SS 2022 加密方式；默认 2022-blake3-aes-128-gcm
   --password PASSWORD   Base64 密钥；省略时按加密方式安全生成
   --host HOST           分享链接中的公网 IP 或域名；省略时自动探测
-  --listen ADDRESS      服务监听地址；默认 0.0.0.0
+  --listen ADDRESS      服务监听地址；默认自动选择 IPv4 或 IPv4/IPv6 双栈
   --version VERSION     安装指定 ssserver 版本；默认 latest
   --force               覆盖同名节点
   --no-start            写入配置但不启用/启动 OpenRC 服务
@@ -195,6 +194,16 @@ detect_target() {
         i386|i486|i586|i686) printf 'i686-unknown-linux-musl\n' ;;
         *) die "官方预编译包不支持当前架构：$(uname -m)" ;;
     esac
+}
+
+default_listen_address() {
+    if [ -r /proc/sys/net/ipv6/bindv6only ] && \
+       [ "$(cat /proc/sys/net/ipv6/bindv6only)" = "0" ] && \
+       ip -6 addr show scope global 2>/dev/null | grep -q 'inet6 '; then
+        printf '::\n'
+    else
+        printf '0.0.0.0\n'
+    fi
 }
 
 ensure_dependencies() {
@@ -578,7 +587,7 @@ create_node() {
     method="$DEFAULT_METHOD"
     password="${SS_PASSWORD:-}"
     host=""
-    listen="$DEFAULT_LISTEN"
+    listen=""
     requested_version="latest"
     force=0
     no_start=0
@@ -609,6 +618,14 @@ create_node() {
     done
 
     ensure_dependencies
+    if [ -z "$listen" ]; then
+        listen=$(default_listen_address)
+        if [ "$listen" = "::" ]; then
+            info "检测到全局 IPv6，使用 :: 同时监听 IPv4 和 IPv6。"
+        else
+            info "使用 0.0.0.0 监听 IPv4。"
+        fi
+    fi
 
     if [ -z "$port" ]; then
         suggested_port=$(random_port)

@@ -9,7 +9,7 @@
 - Alpine Linux 3.18 及更新版本
 - OpenRC 系统（不适用于未运行 OpenRC 的普通 Docker 容器）
 - 官方 Shadowsocks Rust 预编译包提供的常见 Alpine/musl 架构：x86_64、aarch64、armv7/armhf、x86
-- TCP 和 UDP
+- TCP 和 UDP；检测到全局 IPv6 时默认使用 `::` 双栈监听
 - 多节点；每个节点有独立 JSON 配置和 OpenRC 服务
 
 支持三种标准 SS 2022 加密方式：
@@ -62,6 +62,8 @@ SS_PASSWORD='你的标准Base64密钥' \
 AES-128 方法的密钥解码后必须为 16 字节；AES-256 和 ChaCha20 方法必须为 32 字节。省略密码最安全，脚本会自动生成合法密钥。
 
 节点名称允许输入大写字母，脚本会自动转换为小写；例如 `OVHupload-1` 会保存为 `ovhupload-1`。
+
+监听地址会自动选择：服务器具有全局 IPv6 且内核允许双栈套接字时使用 `::`，同时接受 IPv4 和 IPv6；否则使用 `0.0.0.0`。也可以通过 `--listen` 显式指定。
 
 ## 常用命令
 
