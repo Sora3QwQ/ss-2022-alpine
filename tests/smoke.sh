@@ -22,6 +22,7 @@ validate_node_name hk_01
 ! validate_node_name BadName
 ! validate_node_name -bad
 ! validate_node_name bad-
+[[ "$(normalize_node_name OVHupload-1)" == "ovhupload-1" ]]
 
 validate_method 2022-blake3-aes-128-gcm
 validate_method 2022-blake3-aes-256-gcm

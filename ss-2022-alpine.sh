@@ -77,7 +77,7 @@ Alpine Linux 原生 Shadowsocks 2022 节点管理脚本
   ss-2022-alpine.sh version             显示脚本和 ssserver 版本
 
 create 选项：
-  --name NAME           节点名称，仅允许小写字母、数字、下划线和连字符
+  --name NAME           节点名称；大写会自动转小写
   --port PORT           TCP/UDP 端口；默认随机选择 10000-65535
   --method METHOD       SS 2022 加密方式；默认 2022-blake3-aes-128-gcm
   --password PASSWORD   Base64 密钥；省略时按加密方式安全生成
@@ -119,6 +119,10 @@ validate_node_name() {
             ;;
     esac
     [ "${#value}" -le 32 ]
+}
+
+normalize_node_name() {
+    printf '%s\n' "$1" | tr '[:upper:]' '[:lower:]'
 }
 
 validate_port() {
@@ -531,7 +535,7 @@ make_share_uri() {
 }
 
 show_node() {
-    name=$1
+    name=$(normalize_node_name "$1")
     validate_node_name "$name" || die "无效节点名称：$name"
     node_exists "$name" || die "节点不存在：$name"
 
@@ -642,6 +646,11 @@ create_node() {
             node_name=$default_name
         fi
     fi
+    original_node_name=$node_name
+    node_name=$(normalize_node_name "$node_name")
+    if [ "$node_name" != "$original_node_name" ]; then
+        info "节点名称已自动转换为小写：$node_name"
+    fi
     validate_node_name "$node_name" || \
         die "节点名称必须为 1-32 个小写字母、数字、下划线或连字符，且首尾必须是字母或数字。"
 
@@ -705,7 +714,7 @@ list_nodes() {
 
 control_node() {
     action=$1
-    name=$2
+    name=$(normalize_node_name "$2")
     validate_node_name "$name" || die "无效节点名称：$name"
     node_exists "$name" || die "节点不存在：$name"
     service=$(service_name "$name")
@@ -724,7 +733,7 @@ control_node() {
 
 delete_node() {
     [ "$#" -ge 1 ] || die "delete 需要节点名称。"
-    name=$1
+    name=$(normalize_node_name "$1")
     shift
     assume_yes=0
     while [ "$#" -gt 0 ]; do
