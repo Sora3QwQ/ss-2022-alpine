@@ -20,7 +20,13 @@
 
 ## 快速开始
 
-把目录上传到 Alpine 服务器后，以 root 身份执行：
+在 Alpine 服务器上进入 root shell 后，一键交互运行：
+
+```sh
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/Sora3QwQ/ss-2022-alpine/main/ss-2022-alpine.sh)"
+```
+
+如果需要保留脚本用于后续管理，可下载本仓库后在目录中以 root 身份执行：
 
 ```sh
 chmod +x ss-2022-alpine.sh
@@ -119,8 +125,6 @@ ss -lntu | grep ':443'
 - `ss://` 分享链接包含节点密钥，不要发到公开渠道。
 
 上游项目：<https://github.com/shadowsocks/shadowsocks-rust>
-
-原脚本项目：<https://github.com/jinqians/ss-2022.sh>
 
 ## 开发检查
 
